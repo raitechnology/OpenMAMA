@@ -135,7 +135,7 @@ mamaPrice_setValue (mamaPrice           price,
     if (!price)
         return MAMA_STATUS_INVALID_ARG;
     mamaPriceImpl_setValue ((mama_price_t*)price, value);
-    mamaPrice_setIsValidPrice(price,1);
+    mamaPrice_setIsPriceInvalid(price,0);
     return MAMA_STATUS_OK;
 }
 
@@ -173,6 +173,26 @@ mamaPrice_setIsValidPrice (mamaPrice    price,
     return MAMA_STATUS_OK;
 }
 
+mama_status
+mamaPrice_setIsPriceInvalid (mamaPrice    price,
+                             mama_bool_t  inValid)
+{
+    mama_price_hints_t hints = 0;
+    if (!price)
+        return MAMA_STATUS_INVALID_ARG;
+    hints = mamaPriceImpl_getHints((mama_price_t*)price);
+    if (inValid)
+    {
+        hints |= MAMA_PRICE_IMPL_HINT_INVALID_PRICE;
+    }
+    else
+    {
+        hints &= ~MAMA_PRICE_IMPL_HINT_INVALID_PRICE;
+    }
+    mamaPriceImpl_setHints ((mama_price_t*)price, hints);
+    return MAMA_STATUS_OK;
+}
+
 
 
 mama_status
@@ -201,7 +221,26 @@ mama_status
 mamaPrice_setFromString(mamaPrice    price,
                         const char*  str)
 {
-    return MAMA_STATUS_NOT_IMPLEMENTED;
+    double          value;
+    char*           pEnd;
+    mamaPriceHints  hints = MAMA_PRICE_IMPL_HINT_PREC_UNKNOWN;
+
+    if (!price || !str)
+    {
+        return MAMA_STATUS_INVALID_ARG;
+    }
+
+    value = strtod (str, &pEnd);
+
+    /* Check that value is valid */
+    if (str == pEnd)
+    {
+        return MAMA_STATUS_INVALID_ARG;
+    }
+
+    mamaPriceImpl_setWithHints ((mama_price_t*)price, value, hints);
+    mamaPrice_setIsPriceInvalid (price, 0);
+    return MAMA_STATUS_OK;
 }
 
 mama_status
@@ -267,6 +306,17 @@ mamaPrice_getIsValidPrice(const mamaPrice      price,
         return MAMA_STATUS_INVALID_ARG;
     *valid = mamaPriceImpl_getHints ((mama_price_t*)price) & 
                  MAMA_PRICE_IMPL_HINT_VALID_PRICE;
+    return MAMA_STATUS_OK;
+}
+
+mama_status
+mamaPrice_getIsPriceInvalid(const mamaPrice      price,
+                            mama_bool_t*         inValid)
+{
+    if (!price || !inValid)
+        return MAMA_STATUS_INVALID_ARG;
+    *inValid = mamaPriceImpl_getHints ((mama_price_t*)price) & 
+                 MAMA_PRICE_IMPL_HINT_INVALID_PRICE;
     return MAMA_STATUS_OK;
 }
 
